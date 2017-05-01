@@ -6,24 +6,20 @@ export declare class CircularBuffer<T> {
     private data;
     overflow: null | ((T, CBuffer) => void);
     constructor(size: number, data?: T[]);
-    pop(): T;
-    push(args: T & {
-        length?: number;
-    } | T[] | undefined): number;
+    pop(): T | undefined;
+    push(args: T | T[] | undefined): number | undefined;
     reverse(): this;
-    rotateLeft(cntr: any): this;
-    rotateRight(cntr: any): this;
-    shift(): T;
-    sort(fn: any): this;
-    unshift(args: T & {
-        length?: number;
-    } | T[] | undefined): number;
+    rotateLeft(cntr?: number): this;
+    rotateRight(cntr?: number): this;
+    shift(): T | undefined;
+    sort(compareFn?: (a: T, b: T) => number): this;
+    unshift(args: T | T[] | undefined): number;
     indexOf(arg: T, idx?: number): number;
     lastIndexOf(arg: T, idx?: number): number;
-    sortedIndex(value: T, comparator: Function, context: any): number;
-    every(callback: Function, context: any): boolean;
-    forEach(callback: Function, context: any): void;
-    some(callback: Function, context: any): boolean;
+    sortedIndex(value: T, comparator?: (a: T, b: T) => number): number;
+    every(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean): boolean;
+    forEach(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => void): void;
+    some(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean): boolean;
     avg(): number;
     sum(): number;
     median(): number;

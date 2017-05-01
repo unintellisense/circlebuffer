@@ -38,17 +38,25 @@ var CircularBuffer = (function () {
         if (args === undefined)
             return;
         var i = 0;
-        // check if overflow is set, and if data is about to be overwritten
-        if (this.overflow && this.length + args.length > this.size) {
-            // call overflow function and send data that's about to be overwritten
-            for (; i < this.length + args.length - this.size; i++) {
-                this.overflow(this.data[(this.end + i + 1) % this.size], this);
+        if (!(args instanceof Array)) {
+            if (this.overflow && this.length + 1 > this.size) {
+                this.overflow(this.data[(this.end + 1) % this.size], this);
             }
+            this.data[(this.end + 1) % this.size] = args;
+            i++;
         }
-        // push items to the end, wrapping and erasing existing items
-        // using arguments variable directly to reduce gc footprint
-        for (i = 0; i < args.length; i++) {
-            this.data[(this.end + i + 1) % this.size] = args[i];
+        else {
+            // check if overflow is set, and if data is about to be overwritten
+            if (this.overflow && (this.length + args.length) > this.size) {
+                // call overflow function and send data that's about to be overwritten
+                for (; i < this.length + args.length - this.size; i++) {
+                    this.overflow(this.data[(this.end + i + 1) % this.size], this);
+                }
+            }
+            // push items to the end, wrapping and erasing existing items    
+            for (i = 0; i < args.length; i++) {
+                this.data[(this.end + i + 1) % this.size] = args[i];
+            }
         }
         // recalculate length
         if (this.length < this.size) {
@@ -67,7 +75,7 @@ var CircularBuffer = (function () {
     // reverse order of the buffer
     CircularBuffer.prototype.reverse = function () {
         var i = 0, tmp;
-        for (; i < ~~(this.length / 2); i++) {
+        for (; i < ~~(this.length * .5); i++) {
             tmp = this.data[(this.start + i) % this.size];
             this.data[(this.start + i) % this.size] = this.data[(this.start + (this.length - i - 1)) % this.size];
             this.data[(this.start + (this.length - i - 1)) % this.size] = tmp;
@@ -76,10 +84,8 @@ var CircularBuffer = (function () {
     };
     // rotate buffer to the left by cntr, or by 1
     CircularBuffer.prototype.rotateLeft = function (cntr) {
-        if (typeof cntr === 'undefined')
+        if (!cntr)
             cntr = 1;
-        if (typeof cntr !== 'number')
-            throw new Error("Argument must be a number");
         while (--cntr >= 0) {
             this.push(this.shift());
         }
@@ -87,10 +93,8 @@ var CircularBuffer = (function () {
     };
     // rotate buffer to the right by cntr, or by 1
     CircularBuffer.prototype.rotateRight = function (cntr) {
-        if (typeof cntr === 'undefined')
+        if (!cntr)
             cntr = 1;
-        if (typeof cntr !== 'number')
-            throw new Error("Argument must be a number");
         while (--cntr >= 0) {
             this.unshift(this.pop());
         }
@@ -111,8 +115,8 @@ var CircularBuffer = (function () {
         return item;
     };
     // sort items
-    CircularBuffer.prototype.sort = function (fn) {
-        this.data.sort(fn || defaultComparator);
+    CircularBuffer.prototype.sort = function (compareFn) {
+        this.data.sort(compareFn || defaultComparator);
         this.start = 0;
         this.end = this.length - 1;
         return this;
@@ -122,15 +126,25 @@ var CircularBuffer = (function () {
         if (args === undefined)
             return 0;
         var i = 0;
-        // check if overflow is set, and if data is about to be overwritten
-        if (this.overflow && this.length + args.length > this.size) {
-            // call overflow function and send data that's about to be overwritten
-            for (; i < this.length + args.length - this.size; i++) {
-                this.overflow(this.data[this.end - (i % this.size)], this);
+        if (!(args instanceof Array)) {
+            if (this.overflow && this.length + 1 > this.size) {
+                // call overflow function and send data that's about to be overwritten        
+                this.overflow(this.data[this.end], this);
             }
+            this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
+            i++;
         }
-        for (i = 0; i < args.length; i++) {
-            this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
+        else {
+            // check if overflow is set, and if data is about to be overwritten
+            if (this.overflow && this.length + args.length > this.size) {
+                // call overflow function and send data that's about to be overwritten
+                for (; i < this.length + args.length - this.size; i++) {
+                    this.overflow(this.data[this.end - (i % this.size)], this);
+                }
+            }
+            for (i = 0; i < args.length; i++) {
+                this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
+            }
         }
         if (this.size - this.length - i < 0) {
             this.end += this.size - this.length - i;
@@ -143,7 +157,7 @@ var CircularBuffer = (function () {
             else
                 this.length += i;
         }
-        this.start -= args.length;
+        this.start -= i;
         if (this.start < 0)
             this.start = this.size + (this.start % this.size);
         return this.length;
@@ -170,18 +184,18 @@ var CircularBuffer = (function () {
     };
     // return the index an item would be inserted to if this
     // is a sorted circular buffer
-    CircularBuffer.prototype.sortedIndex = function (value, comparator, context) {
+    CircularBuffer.prototype.sortedIndex = function (value, comparator) {
         comparator = comparator || defaultComparator;
         var isFull = this.length === this.size, low = this.start, high = isFull ? this.length - 1 : this.length;
         // Tricky part is finding if its before or after the pivot
         // we can get this info by checking if the target is less than
         // the last item. After that it's just a typical binary search.
-        if (low && comparator.call(context, value, this.data[high]) > 0) {
+        if (low && comparator(value, this.data[high]) > 0) {
             low = 0, high = this.end;
         }
         while (low < high) {
             var mid = (low + high) >>> 1;
-            if (comparator.call(context, value, this.data[mid]) > 0)
+            if (comparator(value, this.data[mid]) > 0)
                 low = mid + 1;
             else
                 high = mid;
@@ -192,28 +206,28 @@ var CircularBuffer = (function () {
     };
     /* iteration methods */
     // check every item in the array against a test
-    CircularBuffer.prototype.every = function (callback, context) {
+    CircularBuffer.prototype.every = function (callback) {
         var i = 0;
         for (; i < this.length; i++) {
-            if (!callback.call(context, this.data[(this.start + i) % this.size], i, this))
+            if (!callback(this.data[(this.start + i) % this.size], i, this))
                 return false;
         }
         return true;
     };
     // loop through each item in buffer
     // TODO: figure out how to emulate Array use better
-    CircularBuffer.prototype.forEach = function (callback, context) {
+    CircularBuffer.prototype.forEach = function (callback) {
         var i = 0;
         for (; i < this.length; i++) {
-            callback.call(context, this.data[(this.start + i) % this.size], i, this);
+            callback(this.data[(this.start + i) % this.size], i, this);
         }
     };
     // check items agains test until one returns true
     // TODO: figure out how to emuldate Array use better
-    CircularBuffer.prototype.some = function (callback, context) {
+    CircularBuffer.prototype.some = function (callback) {
         var i = 0;
         for (; i < this.length; i++) {
-            if (callback.call(context, this.data[(this.start + i) % this.size], i, this))
+            if (callback(this.data[(this.start + i) % this.size], i, this))
                 return true;
         }
         return false;
@@ -316,3 +330,4 @@ var CircularBuffer = (function () {
     return CircularBuffer;
 }());
 exports.CircularBuffer = CircularBuffer;
+//# sourceMappingURL=circularBuffer.js.map

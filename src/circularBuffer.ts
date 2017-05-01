@@ -18,17 +18,19 @@ export class CircularBuffer<T> {
 
   constructor(size: number, data?: T[]) {
     // this is the same in either scenario
+    if (data && data.length > size) throw new Error('cannot set array smaller than buffer size');
+    this.size = size;
     this.length = this.start = 0;
     // set to callback fn if data is about to be overwritten
     this.overflow = null;
     // emulate Array based on passed arguments
     if (data) {
       this.data = new Array(data.length);
-      this.end = (this.size = data.length) - 1;
+      this.end = (this.size) - 1;
       this.push(data);
     } else {
       this.data = new Array(size);
-      this.end = (this.size = size) - 1;
+      this.end = this.size - 1;
     }
   }
 
