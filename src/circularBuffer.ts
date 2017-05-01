@@ -4,7 +4,7 @@ function defaultComparator(a, b) {
   return a == b ? 0 : a > b ? 1 : -1;
 }
 
-class CBuffer<T> {
+export class CircularBuffer<T> {
 
   private length: number
   private start: number
@@ -15,30 +15,25 @@ class CBuffer<T> {
   private data: T[]
   public overflow: null | ((T, CBuffer) => void)
 
-  constructor(args: number & { length?: number } | T[]) {
-    // if no arguments, then nothing needs to be set
-    if (args instanceof Array && args.length === 0) {
-      throw new Error('Missing Argument: You must pass a valid buffer size');
-    }
+
+  constructor(size: number, data?: T[]) {
     // this is the same in either scenario
     this.length = this.start = 0;
     // set to callback fn if data is about to be overwritten
     this.overflow = null;
     // emulate Array based on passed arguments
-    if (args.length! > 1 || typeof args[0] !== 'number') {
-      this.data = new Array(args.length);
-      this.end = (this.size = args.length!) - 1;
-      this.push.apply(this, args);
+    if (data) {
+      this.data = new Array(data.length);
+      this.end = (this.size = data.length) - 1;
+      this.push(data);
     } else {
-      this.data = new Array(args[0]);
-      this.end = (this.size = args[0]) - 1;
+      this.data = new Array(size);
+      this.end = (this.size = size) - 1;
     }
-    // need to `return this` so `return CBuffer.apply` works
-    return this;
   }
 
   // pop last item
-  pop() {
+  pop(): T | undefined {
     let item: T;
     if (this.length === 0) return;
     item = this.data[this.end];
@@ -50,21 +45,29 @@ class CBuffer<T> {
   }
 
   // push item to the end
-  push(args: T & { length?: number } | T[] | undefined) {
+  push(args: T | T[] | undefined) {
     if (args === undefined) return;
     let i = 0;
-    // check if overflow is set, and if data is about to be overwritten
-    if (this.overflow && this.length + args.length! > this.size) {
-      // call overflow function and send data that's about to be overwritten
-      for (; i < this.length + args.length! - this.size; i++) {
-        this.overflow(this.data[(this.end + i + 1) % this.size], this);
+    if (!(args instanceof Array)) {
+      if (this.overflow && this.length + 1 > this.size) { // will overflow
+        this.overflow(this.data[(this.end + 1) % this.size], this);
+      }
+      this.data[(this.end + 1) % this.size] = args;
+      i++;
+    } else {
+      // check if overflow is set, and if data is about to be overwritten
+      if (this.overflow && (this.length + args.length) > this.size) {
+        // call overflow function and send data that's about to be overwritten
+        for (; i < this.length + args.length - this.size; i++) {
+          this.overflow(this.data[(this.end + i + 1) % this.size], this);
+        }
+      }
+      // push items to the end, wrapping and erasing existing items    
+      for (i = 0; i < args.length!; i++) {
+        this.data[(this.end + i + 1) % this.size] = args[i];
       }
     }
-    // push items to the end, wrapping and erasing existing items
-    // using arguments variable directly to reduce gc footprint
-    for (i = 0; i < args.length!; i++) {
-      this.data[(this.end + i + 1) % this.size] = args[i];
-    }
+
     // recalculate length
     if (this.length < this.size) {
       if (this.length + i > this.size) this.length = this.size;
@@ -82,7 +85,7 @@ class CBuffer<T> {
   reverse() {
     let i = 0,
       tmp;
-    for (; i < ~~(this.length / 2); i++) {
+    for (; i < ~~(this.length * .5); i++) {
       tmp = this.data[(this.start + i) % this.size];
       this.data[(this.start + i) % this.size] = this.data[(this.start + (this.length - i - 1)) % this.size];
       this.data[(this.start + (this.length - i - 1)) % this.size] = tmp;
@@ -91,9 +94,8 @@ class CBuffer<T> {
   }
 
   // rotate buffer to the left by cntr, or by 1
-  rotateLeft(cntr) {
-    if (typeof cntr === 'undefined') cntr = 1;
-    if (typeof cntr !== 'number') throw new Error("Argument must be a number");
+  rotateLeft(cntr?: number) {
+    if (!cntr) cntr = 1;
     while (--cntr >= 0) {
       this.push(this.shift());
     }
@@ -101,9 +103,9 @@ class CBuffer<T> {
   }
 
   // rotate buffer to the right by cntr, or by 1
-  rotateRight(cntr) {
-    if (typeof cntr === 'undefined') cntr = 1;
-    if (typeof cntr !== 'number') throw new Error("Argument must be a number");
+  rotateRight(cntr?: number) {
+    if (!cntr) cntr = 1;
+
     while (--cntr >= 0) {
       this.unshift(this.pop());
     }
@@ -111,7 +113,7 @@ class CBuffer<T> {
   }
 
   // remove and return first item
-  shift() {
+  shift(): T | undefined {
     let item: T;
     // check if there are any items in CBuff
     if (this.length === 0) return;
@@ -125,27 +127,38 @@ class CBuffer<T> {
   }
 
   // sort items
-  sort(fn) {
-    this.data.sort(fn || defaultComparator);
+  sort(compareFn?: (a: T, b: T) => number) {
+    this.data.sort(compareFn || defaultComparator);
     this.start = 0;
     this.end = this.length - 1;
     return this;
   }
 
   // add item to beginning of buffer
-  unshift(args: T & { length?: number } | T[] | undefined) {
+  unshift(args: T | T[] | undefined) {
     if (args === undefined) return 0;
     let i = 0;
-    // check if overflow is set, and if data is about to be overwritten
-    if (this.overflow && this.length + args.length! > this.size) {
-      // call overflow function and send data that's about to be overwritten
-      for (; i < this.length + args.length! - this.size; i++) {
-        this.overflow(this.data[this.end - (i % this.size)], this);
+    if (!(args instanceof Array)) {
+      if (this.overflow && this.length + 1 > this.size) {
+        // call overflow function and send data that's about to be overwritten        
+        this.overflow(this.data[this.end], this);
       }
+      this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
+      i++;
+    } else {
+      // check if overflow is set, and if data is about to be overwritten
+      if (this.overflow && this.length + args.length! > this.size) {
+        // call overflow function and send data that's about to be overwritten
+        for (; i < this.length + args.length! - this.size; i++) {
+          this.overflow(this.data[this.end - (i % this.size)], this);
+        }
+      }
+      for (i = 0; i < args.length!; i++) {
+        this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
+      }
+
     }
-    for (i = 0; i < args.length!; i++) {
-      this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
-    }
+
     if (this.size - this.length - i < 0) {
       this.end += this.size - this.length - i;
       if (this.end < 0) this.end = this.size + (this.end % this.size);
@@ -154,7 +167,8 @@ class CBuffer<T> {
       if (this.length + i > this.size) this.length = this.size;
       else this.length += i;
     }
-    this.start -= args.length!;
+
+    this.start -= i;
     if (this.start < 0) this.start = this.size + (this.start % this.size);
     return this.length;
   }
@@ -180,7 +194,7 @@ class CBuffer<T> {
 
   // return the index an item would be inserted to if this
   // is a sorted circular buffer
-  sortedIndex(value: T, comparator: Function, context: any) {
+  sortedIndex(value: T, comparator?: (a: T, b: T) => number) {
     comparator = comparator || defaultComparator;
     let isFull = this.length === this.size,
       low = this.start,
@@ -189,13 +203,13 @@ class CBuffer<T> {
     // Tricky part is finding if its before or after the pivot
     // we can get this info by checking if the target is less than
     // the last item. After that it's just a typical binary search.
-    if (low && comparator.call(context, value, this.data[high]) > 0) {
+    if (low && comparator(value, this.data[high]) > 0) {
       low = 0, high = this.end;
     }
 
     while (low < high) {
       let mid = (low + high) >>> 1;
-      if (comparator.call(context, value, this.data[mid]) > 0) low = mid + 1;
+      if (comparator(value, this.data[mid]) > 0) low = mid + 1;
       else high = mid;
     }
     return !isFull ? low :
@@ -205,10 +219,10 @@ class CBuffer<T> {
 
   /* iteration methods */
   // check every item in the array against a test
-  every(callback: Function, context: any) {
+  every(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean) {
     let i = 0;
     for (; i < this.length; i++) {
-      if (!callback.call(context, this.data[(this.start + i) % this.size], i, this))
+      if (!callback(this.data[(this.start + i) % this.size], i, this))
         return false;
     }
     return true;
@@ -216,19 +230,19 @@ class CBuffer<T> {
 
   // loop through each item in buffer
   // TODO: figure out how to emulate Array use better
-  forEach(callback: Function, context: any) {
+  forEach(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => void) {
     let i = 0;
     for (; i < this.length; i++) {
-      callback.call(context, this.data[(this.start + i) % this.size], i, this);
+      callback(this.data[(this.start + i) % this.size], i, this);
     }
   }
 
   // check items agains test until one returns true
   // TODO: figure out how to emuldate Array use better
-  some(callback: Function, context: any) {
+  some(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean) {
     let i = 0;
     for (; i < this.length; i++) {
-      if (callback.call(context, this.data[(this.start + i) % this.size], i, this))
+      if (callback(this.data[(this.start + i) % this.size], i, this))
         return true;
     }
     return false;

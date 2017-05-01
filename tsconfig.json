@@ -5,6 +5,10 @@
         "noImplicitAny": false,
         "sourceMap": false,
         "outDir": "dist",
-        "rootDir": "src"
-    }
+        "strictNullChecks": true,
+        "declaration": true
+    },
+    "include": [
+        "src/**.ts"
+    ]
 }

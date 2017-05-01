@@ -2,10 +2,20 @@
   "name": "circularbuffer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/circularBuffer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --require ts-node/register test/**-test.ts"
   },
-  "author": "",
-  "license": "ISC"
+  "typings": "dist/circularBuffer.d.ts",
+  "devDependencies": {
+    "@types/chai": "^3.5.2",
+    "@types/mocha": "^2.2.41",
+    "chai": "^3.5.0",
+    "mocha": "^3.3.0",
+    "ts-node": "^3.0.2",
+    "typescript": "^2.3.2"
+  }
 }

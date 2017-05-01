@@ -1,32 +1,28 @@
 // converted from https://github.com/trevnorris/cbuffer
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function defaultComparator(a, b) {
     return a == b ? 0 : a > b ? 1 : -1;
 }
-var CBuffer = (function () {
-    function CBuffer(args) {
-        // if no arguments, then nothing needs to be set
-        if (args instanceof Array && args.length === 0) {
-            throw new Error('Missing Argument: You must pass a valid buffer size');
-        }
+var CircularBuffer = (function () {
+    function CircularBuffer(size, data) {
         // this is the same in either scenario
         this.length = this.start = 0;
         // set to callback fn if data is about to be overwritten
         this.overflow = null;
         // emulate Array based on passed arguments
-        if (args.length > 1 || typeof args[0] !== 'number') {
-            this.data = new Array(args.length);
-            this.end = (this.size = args.length) - 1;
-            this.push.apply(this, args);
+        if (data) {
+            this.data = new Array(data.length);
+            this.end = (this.size = data.length) - 1;
+            this.push(data);
         }
         else {
-            this.data = new Array(args[0]);
-            this.end = (this.size = args[0]) - 1;
+            this.data = new Array(size);
+            this.end = (this.size = size) - 1;
         }
-        // need to `return this` so `return CBuffer.apply` works
-        return this;
     }
     // pop last item
-    CBuffer.prototype.pop = function () {
+    CircularBuffer.prototype.pop = function () {
         var item;
         if (this.length === 0)
             return;
@@ -38,7 +34,7 @@ var CBuffer = (function () {
         return item;
     };
     // push item to the end
-    CBuffer.prototype.push = function (args) {
+    CircularBuffer.prototype.push = function (args) {
         if (args === undefined)
             return;
         var i = 0;
@@ -69,7 +65,7 @@ var CBuffer = (function () {
         return this.length;
     };
     // reverse order of the buffer
-    CBuffer.prototype.reverse = function () {
+    CircularBuffer.prototype.reverse = function () {
         var i = 0, tmp;
         for (; i < ~~(this.length / 2); i++) {
             tmp = this.data[(this.start + i) % this.size];
@@ -79,7 +75,7 @@ var CBuffer = (function () {
         return this;
     };
     // rotate buffer to the left by cntr, or by 1
-    CBuffer.prototype.rotateLeft = function (cntr) {
+    CircularBuffer.prototype.rotateLeft = function (cntr) {
         if (typeof cntr === 'undefined')
             cntr = 1;
         if (typeof cntr !== 'number')
@@ -90,7 +86,7 @@ var CBuffer = (function () {
         return this;
     };
     // rotate buffer to the right by cntr, or by 1
-    CBuffer.prototype.rotateRight = function (cntr) {
+    CircularBuffer.prototype.rotateRight = function (cntr) {
         if (typeof cntr === 'undefined')
             cntr = 1;
         if (typeof cntr !== 'number')
@@ -101,7 +97,7 @@ var CBuffer = (function () {
         return this;
     };
     // remove and return first item
-    CBuffer.prototype.shift = function () {
+    CircularBuffer.prototype.shift = function () {
         var item;
         // check if there are any items in CBuff
         if (this.length === 0)
@@ -115,14 +111,14 @@ var CBuffer = (function () {
         return item;
     };
     // sort items
-    CBuffer.prototype.sort = function (fn) {
+    CircularBuffer.prototype.sort = function (fn) {
         this.data.sort(fn || defaultComparator);
         this.start = 0;
         this.end = this.length - 1;
         return this;
     };
     // add item to beginning of buffer
-    CBuffer.prototype.unshift = function (args) {
+    CircularBuffer.prototype.unshift = function (args) {
         if (args === undefined)
             return 0;
         var i = 0;
@@ -153,7 +149,7 @@ var CBuffer = (function () {
         return this.length;
     };
     // return index of first matched element
-    CBuffer.prototype.indexOf = function (arg, idx) {
+    CircularBuffer.prototype.indexOf = function (arg, idx) {
         if (!idx)
             idx = 0;
         for (; idx < this.length; idx++) {
@@ -163,7 +159,7 @@ var CBuffer = (function () {
         return -1;
     };
     // return last index of the first match
-    CBuffer.prototype.lastIndexOf = function (arg, idx) {
+    CircularBuffer.prototype.lastIndexOf = function (arg, idx) {
         if (!idx)
             idx = this.length - 1;
         for (; idx >= 0; idx--) {
@@ -174,7 +170,7 @@ var CBuffer = (function () {
     };
     // return the index an item would be inserted to if this
     // is a sorted circular buffer
-    CBuffer.prototype.sortedIndex = function (value, comparator, context) {
+    CircularBuffer.prototype.sortedIndex = function (value, comparator, context) {
         comparator = comparator || defaultComparator;
         var isFull = this.length === this.size, low = this.start, high = isFull ? this.length - 1 : this.length;
         // Tricky part is finding if its before or after the pivot
@@ -196,7 +192,7 @@ var CBuffer = (function () {
     };
     /* iteration methods */
     // check every item in the array against a test
-    CBuffer.prototype.every = function (callback, context) {
+    CircularBuffer.prototype.every = function (callback, context) {
         var i = 0;
         for (; i < this.length; i++) {
             if (!callback.call(context, this.data[(this.start + i) % this.size], i, this))
@@ -206,7 +202,7 @@ var CBuffer = (function () {
     };
     // loop through each item in buffer
     // TODO: figure out how to emulate Array use better
-    CBuffer.prototype.forEach = function (callback, context) {
+    CircularBuffer.prototype.forEach = function (callback, context) {
         var i = 0;
         for (; i < this.length; i++) {
             callback.call(context, this.data[(this.start + i) % this.size], i, this);
@@ -214,7 +210,7 @@ var CBuffer = (function () {
     };
     // check items agains test until one returns true
     // TODO: figure out how to emuldate Array use better
-    CBuffer.prototype.some = function (callback, context) {
+    CircularBuffer.prototype.some = function (callback, context) {
         var i = 0;
         for (; i < this.length; i++) {
             if (callback.call(context, this.data[(this.start + i) % this.size], i, this))
@@ -223,11 +219,11 @@ var CBuffer = (function () {
         return false;
     };
     // calculate the average value of a circular buffer
-    CBuffer.prototype.avg = function () {
+    CircularBuffer.prototype.avg = function () {
         return this.length == 0 ? 0 : (this.sum() / this.length);
     };
     // loop through each item in buffer and calculate sum
-    CBuffer.prototype.sum = function () {
+    CircularBuffer.prototype.sum = function () {
         var index = this.length;
         var s = 0;
         while (index--)
@@ -235,7 +231,7 @@ var CBuffer = (function () {
         return s;
     };
     // loop through each item in buffer and calculate median
-    CBuffer.prototype.median = function () {
+    CircularBuffer.prototype.median = function () {
         if (this.length === 0)
             return 0;
         var values = this.slice().sort(defaultComparator); // will runtime error if T isnt number
@@ -249,14 +245,14 @@ var CBuffer = (function () {
     // reset pointers to buffer with zero items
     // note: this will not remove values in cbuffer, so if for security values
     //       need to be overwritten, run `.fill(null).empty()`
-    CBuffer.prototype.empty = function () {
+    CircularBuffer.prototype.empty = function () {
         var i = 0;
         this.length = this.start = 0;
         this.end = this.size - 1;
         return this;
     };
     // fill all places with passed value or function
-    CBuffer.prototype.fill = function (arg) {
+    CircularBuffer.prototype.fill = function (arg) {
         var i = 0;
         if (typeof arg === 'function') {
             while (this.data[i] = arg(), ++i < this.size)
@@ -273,30 +269,30 @@ var CBuffer = (function () {
         return this;
     };
     // return first item in buffer
-    CBuffer.prototype.first = function () {
+    CircularBuffer.prototype.first = function () {
         return this.data[this.start];
     };
     // return last item in buffer
-    CBuffer.prototype.last = function () {
+    CircularBuffer.prototype.last = function () {
         return this.data[this.end];
     };
     // return specific index in buffer
-    CBuffer.prototype.get = function (arg) {
+    CircularBuffer.prototype.get = function (arg) {
         return this.data[(this.start + arg) % this.size];
     };
-    CBuffer.prototype.isFull = function () {
+    CircularBuffer.prototype.isFull = function () {
         return this.size === this.length;
     };
     // set value at specified index
-    CBuffer.prototype.set = function (idx, arg) {
+    CircularBuffer.prototype.set = function (idx, arg) {
         return this.data[(this.start + idx) % this.size] = arg;
     };
     // return clean array of values
-    CBuffer.prototype.toArray = function () {
+    CircularBuffer.prototype.toArray = function () {
         return this.slice();
     };
     // slice the buffer to an arraay
-    CBuffer.prototype.slice = function (start, end) {
+    CircularBuffer.prototype.slice = function (start, end) {
         var size = this.length;
         start = +start || 0;
         if (start < 0) {
@@ -317,5 +313,6 @@ var CBuffer = (function () {
         }
         return result;
     };
-    return CBuffer;
+    return CircularBuffer;
 }());
+exports.CircularBuffer = CircularBuffer;
