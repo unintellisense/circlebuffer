@@ -232,7 +232,7 @@ export class CircularBuffer<T> {
 
   // loop through each item in buffer
   // TODO: figure out how to emulate Array use better
-  forEach(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => void) {
+  forEach(callback: (val: T, idx: number, buff: CircularBuffer<T>) => void) {
     let i = 0;
     for (; i < this.length; i++) {
       callback(this.data[(this.start + i) % this.size], i, this);
@@ -241,7 +241,7 @@ export class CircularBuffer<T> {
 
   // check items agains test until one returns true
   // TODO: figure out how to emuldate Array use better
-  some(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean) {
+  some(callback: (val: T, idx: number, buff: CircularBuffer<T>) => boolean) {
     let i = 0;
     for (; i < this.length; i++) {
       if (callback(this.data[(this.start + i) % this.size], i, this))
