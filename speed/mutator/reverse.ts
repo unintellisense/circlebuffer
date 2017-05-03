@@ -4,7 +4,7 @@ import { test } from '../test';
 const SIZE = 1e5;
 
 let cb = new CircularBuffer<number>(SIZE),
-    arr = [],
+    arr: any[] = [],
     i: number;
 
 for (i = SIZE; i > 0; i--) {
@@ -12,10 +12,14 @@ for (i = SIZE; i > 0; i--) {
     cb.push(i);
 }
 
-test('reverse - CBuffer', function () {
-    cb.reverse();
-});
+export function doTest() {
 
-test('reverse - Array  ', function () {
-    arr.reverse();
-});
+    test('reverse - CBuffer', function () {
+        cb.reverse();
+    });
+
+    test('reverse - Array  ', function () {
+        arr.reverse();
+    });
+
+}

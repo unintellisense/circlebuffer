@@ -7,7 +7,8 @@
   ],
   "main": "dist/circularBuffer.js",
   "scripts": {
-    "test": "mocha --require ts-node/register test/**-test.ts"
+    "test": "mocha --require ts-node/register test/**-test.ts",
+    "speed": "ts-node .\\speed\\index.ts"
   },
   "typings": "dist/circularBuffer.d.ts",
   "devDependencies": {
