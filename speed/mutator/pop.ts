@@ -6,7 +6,7 @@ import { test } from '../test';
 
 let cb = new CircularBuffer<number>(SIZE),
 	arr: any[] = [];
-export function doTest() {
+(function doTest() {
 
 	test('pop 1e5 - CBuffer', function () {
 		cb.empty();
@@ -31,5 +31,7 @@ export function doTest() {
 	});
 
 
-}
+})()
+
+export const _ = undefined;
 

@@ -12,7 +12,7 @@ for (i = SIZE; i > 0; i--) {
     cb.push(i);
 }
 
-export function doTest() {
+(function doTest() {
 
     test('reverse - CBuffer', function () {
         cb.reverse();
@@ -22,4 +22,6 @@ export function doTest() {
         arr.reverse();
     });
 
-}
+})()
+
+export const _ = undefined;

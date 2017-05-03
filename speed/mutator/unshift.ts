@@ -6,7 +6,7 @@ const SIZE = 1e5;
 let cb = new CircularBuffer<number>(SIZE),
 	arr: any[] = [];
 
-export function doTest() {
+(function doTest() {
 
 	test('unshift 1e5 - CBuffer', function () {
 		cb.empty();
@@ -22,4 +22,6 @@ export function doTest() {
 		while (arr.unshift(i), --i >= 0);
 	});
 
-}
+})()
+
+export const _ = undefined;
