@@ -1,4 +1,4 @@
-export declare class CircularBuffer<T> {
+export default class CircularBuffer<T> {
     private length;
     private start;
     private end;
@@ -18,8 +18,8 @@ export declare class CircularBuffer<T> {
     lastIndexOf(arg: T, idx?: number): number;
     sortedIndex(value: T, comparator?: (a: T, b: T) => number): number;
     every(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean): boolean;
-    forEach(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => void): void;
-    some(callback: (val: T, idx?: number, buff?: CircularBuffer<T>) => boolean): boolean;
+    forEach(callback: (val: T, idx: number, buff: CircularBuffer<T>) => void): void;
+    some(callback: (val: T, idx: number, buff: CircularBuffer<T>) => boolean): boolean;
     avg(): number;
     sum(): number;
     median(): number;

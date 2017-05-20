@@ -4,7 +4,7 @@ function defaultComparator(a, b) {
   return a == b ? 0 : a > b ? 1 : -1;
 }
 
-export class CircularBuffer<T> {
+export default class CircularBuffer<T> {
 
   private length: number
   private start: number
