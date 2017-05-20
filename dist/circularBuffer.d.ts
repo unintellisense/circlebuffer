@@ -7,13 +7,13 @@ export default class CircularBuffer<T> {
     overflow: null | ((T, CBuffer) => void);
     constructor(size: number, data?: T[]);
     pop(): T | undefined;
-    push(args: T | T[] | undefined): number | undefined;
+    push(args: T | undefined): number | undefined;
     reverse(): this;
     rotateLeft(cntr?: number): this;
     rotateRight(cntr?: number): this;
     shift(): T | undefined;
     sort(compareFn?: (a: T, b: T) => number): this;
-    unshift(args: T | T[] | undefined): number;
+    unshift(args: T | undefined): number;
     indexOf(arg: T, idx?: number): number;
     lastIndexOf(arg: T, idx?: number): number;
     sortedIndex(value: T, comparator?: (a: T, b: T) => number): number;

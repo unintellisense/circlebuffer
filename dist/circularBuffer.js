@@ -6,6 +6,7 @@ function defaultComparator(a, b) {
 }
 var CircularBuffer = (function () {
     function CircularBuffer(size, data) {
+        var _this = this;
         // this is the same in either scenario
         if (data && data.length > size)
             throw new Error('cannot set array smaller than buffer size');
@@ -17,7 +18,7 @@ var CircularBuffer = (function () {
         if (data) {
             this.data = new Array(data.length);
             this.end = (this.size) - 1;
-            this.push(data);
+            data.forEach(function (datum) { return _this.push(datum); });
         }
         else {
             this.data = new Array(size);
@@ -41,26 +42,11 @@ var CircularBuffer = (function () {
         if (args === undefined)
             return;
         var i = 0;
-        if (!(args instanceof Array)) {
-            if (this.overflow && this.length + 1 > this.size) {
-                this.overflow(this.data[(this.end + 1) % this.size], this);
-            }
-            this.data[(this.end + 1) % this.size] = args;
-            i++;
+        if (this.overflow && this.length + 1 > this.size) {
+            this.overflow(this.data[(this.end + 1) % this.size], this);
         }
-        else {
-            // check if overflow is set, and if data is about to be overwritten
-            if (this.overflow && (this.length + args.length) > this.size) {
-                // call overflow function and send data that's about to be overwritten
-                for (; i < this.length + args.length - this.size; i++) {
-                    this.overflow(this.data[(this.end + i + 1) % this.size], this);
-                }
-            }
-            // push items to the end, wrapping and erasing existing items    
-            for (i = 0; i < args.length; i++) {
-                this.data[(this.end + i + 1) % this.size] = args[i];
-            }
-        }
+        this.data[(this.end + 1) % this.size] = args;
+        i++;
         // recalculate length
         if (this.length < this.size) {
             if (this.length + i > this.size)
@@ -129,26 +115,12 @@ var CircularBuffer = (function () {
         if (args === undefined)
             return 0;
         var i = 0;
-        if (!(args instanceof Array)) {
-            if (this.overflow && this.length + 1 > this.size) {
-                // call overflow function and send data that's about to be overwritten        
-                this.overflow(this.data[this.end], this);
-            }
-            this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
-            i++;
+        if (this.overflow && this.length + 1 > this.size) {
+            // call overflow function and send data that's about to be overwritten        
+            this.overflow(this.data[this.end], this);
         }
-        else {
-            // check if overflow is set, and if data is about to be overwritten
-            if (this.overflow && this.length + args.length > this.size) {
-                // call overflow function and send data that's about to be overwritten
-                for (; i < this.length + args.length - this.size; i++) {
-                    this.overflow(this.data[this.end - (i % this.size)], this);
-                }
-            }
-            for (i = 0; i < args.length; i++) {
-                this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
-            }
-        }
+        this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
+        i++;
         if (this.size - this.length - i < 0) {
             this.end += this.size - this.length - i;
             if (this.end < 0)

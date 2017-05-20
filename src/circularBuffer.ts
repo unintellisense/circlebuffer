@@ -27,7 +27,7 @@ export default class CircularBuffer<T> {
     if (data) {
       this.data = new Array(data.length);
       this.end = (this.size) - 1;
-      this.push(data);
+      data.forEach(datum => this.push(datum));      
     } else {
       this.data = new Array(size);
       this.end = this.size - 1;
@@ -47,28 +47,15 @@ export default class CircularBuffer<T> {
   }
 
   // push item to the end
-  push(args: T | T[] | undefined) {
+  push(args: T | undefined) {
     if (args === undefined) return;
     let i = 0;
-    if (!(args instanceof Array)) {
-      if (this.overflow && this.length + 1 > this.size) { // will overflow
-        this.overflow(this.data[(this.end + 1) % this.size], this);
-      }
-      this.data[(this.end + 1) % this.size] = args;
-      i++;
-    } else {
-      // check if overflow is set, and if data is about to be overwritten
-      if (this.overflow && (this.length + args.length) > this.size) {
-        // call overflow function and send data that's about to be overwritten
-        for (; i < this.length + args.length - this.size; i++) {
-          this.overflow(this.data[(this.end + i + 1) % this.size], this);
-        }
-      }
-      // push items to the end, wrapping and erasing existing items    
-      for (i = 0; i < args.length!; i++) {
-        this.data[(this.end + i + 1) % this.size] = args[i];
-      }
+
+    if (this.overflow && this.length + 1 > this.size) { // will overflow
+      this.overflow(this.data[(this.end + 1) % this.size], this);
     }
+    this.data[(this.end + 1) % this.size] = args;
+    i++;
 
     // recalculate length
     if (this.length < this.size) {
@@ -137,29 +124,16 @@ export default class CircularBuffer<T> {
   }
 
   // add item to beginning of buffer
-  unshift(args: T | T[] | undefined) {
+  unshift(args: T | undefined) {
     if (args === undefined) return 0;
     let i = 0;
-    if (!(args instanceof Array)) {
-      if (this.overflow && this.length + 1 > this.size) {
-        // call overflow function and send data that's about to be overwritten        
-        this.overflow(this.data[this.end], this);
-      }
-      this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
-      i++;
-    } else {
-      // check if overflow is set, and if data is about to be overwritten
-      if (this.overflow && this.length + args.length! > this.size) {
-        // call overflow function and send data that's about to be overwritten
-        for (; i < this.length + args.length! - this.size; i++) {
-          this.overflow(this.data[this.end - (i % this.size)], this);
-        }
-      }
-      for (i = 0; i < args.length!; i++) {
-        this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args[i];
-      }
 
+    if (this.overflow && this.length + 1 > this.size) {
+      // call overflow function and send data that's about to be overwritten        
+      this.overflow(this.data[this.end], this);
     }
+    this.data[(this.size + this.start - (i % this.size) - 1) % this.size] = args;
+    i++;
 
     if (this.size - this.length - i < 0) {
       this.end += this.size - this.length - i;
