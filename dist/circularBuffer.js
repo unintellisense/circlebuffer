@@ -1,12 +1,12 @@
-// converted from https://github.com/trevnorris/cbuffer
 "use strict";
+// converted from https://github.com/trevnorris/cbuffer
 Object.defineProperty(exports, "__esModule", { value: true });
-function defaultComparator(a, b) {
-    return a == b ? 0 : a > b ? 1 : -1;
-}
 var CircularBuffer = (function () {
     function CircularBuffer(size, data) {
         var _this = this;
+        this.defaultComparator = function (a, b) {
+            return a == b ? 0 : a > b ? 1 : -1;
+        };
         // this is the same in either scenario
         if (data && data.length > size)
             throw new Error('cannot set array smaller than buffer size');
@@ -105,7 +105,7 @@ var CircularBuffer = (function () {
     };
     // sort items
     CircularBuffer.prototype.sort = function (compareFn) {
-        this.data.sort(compareFn || defaultComparator);
+        this.data.sort(compareFn || this.defaultComparator);
         this.start = 0;
         this.end = this.length - 1;
         return this;
@@ -160,7 +160,7 @@ var CircularBuffer = (function () {
     // return the index an item would be inserted to if this
     // is a sorted circular buffer
     CircularBuffer.prototype.sortedIndex = function (value, comparator) {
-        comparator = comparator || defaultComparator;
+        comparator = comparator || this.defaultComparator;
         var isFull = this.length === this.size, low = this.start, high = isFull ? this.length - 1 : this.length;
         // Tricky part is finding if its before or after the pivot
         // we can get this info by checking if the target is less than
@@ -223,7 +223,7 @@ var CircularBuffer = (function () {
     CircularBuffer.prototype.median = function () {
         if (this.length === 0)
             return 0;
-        var values = this.slice().sort(defaultComparator); // will runtime error if T isnt number
+        var values = this.slice().sort(this.defaultComparator); // will runtime error if T isnt number
         var half = Math.floor(values.length / 2);
         if (values.length % 2)
             return values[half];

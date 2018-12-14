@@ -1,9 +1,5 @@
 // converted from https://github.com/trevnorris/cbuffer
 
-function defaultComparator(a, b) {
-  return a == b ? 0 : a > b ? 1 : -1;
-}
-
 export default class CircularBuffer<T> {
 
   private length: number
@@ -11,9 +7,13 @@ export default class CircularBuffer<T> {
   private end: number
   private size: number
 
+  private defaultComparator = (a: T, b: T) => {
+    return a == b ? 0 : a > b ? 1 : -1;
+  }
+
 
   private data: T[]
-  public overflow: null | ((T, CBuffer) => void)
+  public overflow: null | ((t: T, buffer: CircularBuffer<T>) => void)
 
 
   constructor(size: number, data?: T[]) {
@@ -27,7 +27,7 @@ export default class CircularBuffer<T> {
     if (data) {
       this.data = new Array(data.length);
       this.end = (this.size) - 1;
-      data.forEach(datum => this.push(datum));      
+      data.forEach(datum => this.push(datum));
     } else {
       this.data = new Array(size);
       this.end = this.size - 1;
@@ -117,7 +117,7 @@ export default class CircularBuffer<T> {
 
   // sort items
   sort(compareFn?: (a: T, b: T) => number) {
-    this.data.sort(compareFn || defaultComparator);
+    this.data.sort(compareFn || this.defaultComparator);
     this.start = 0;
     this.end = this.length - 1;
     return this;
@@ -171,7 +171,7 @@ export default class CircularBuffer<T> {
   // return the index an item would be inserted to if this
   // is a sorted circular buffer
   sortedIndex(value: T, comparator?: (a: T, b: T) => number) {
-    comparator = comparator || defaultComparator;
+    comparator = comparator || this.defaultComparator;
     let isFull = this.length === this.size,
       low = this.start,
       high = isFull ? this.length - 1 : this.length;
@@ -241,7 +241,7 @@ export default class CircularBuffer<T> {
   median(): number {
     if (this.length === 0)
       return 0;
-    let values = <any[]>this.slice().sort(defaultComparator); // will runtime error if T isnt number
+    let values = <any[]>this.slice().sort(this.defaultComparator); // will runtime error if T isnt number
     let half = Math.floor(values.length / 2);
     if (values.length % 2)
       return values[half];

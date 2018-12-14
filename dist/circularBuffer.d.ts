@@ -3,8 +3,9 @@ export default class CircularBuffer<T> {
     private start;
     private end;
     private size;
+    private defaultComparator;
     private data;
-    overflow: null | ((T, CBuffer) => void);
+    overflow: null | ((t: T, buffer: CircularBuffer<T>) => void);
     constructor(size: number, data?: T[]);
     pop(): T | undefined;
     push(args: T | undefined): number | undefined;
